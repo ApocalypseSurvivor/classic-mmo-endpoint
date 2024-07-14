@@ -4,7 +4,7 @@ CREATE TABLE users (
   user_id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
-  email TEXT UNIQUE NOT NULL,
+  email TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 INSERT INTO users VALUES(1,'admin','$2a$08$Y4iwX1P2aGngvK46YzC3R.AR1b5OqpxI80.kEVNtDCbpC.eo5ntIa','admin@classic-mmo.game','2024-07-13 23:33:21');
