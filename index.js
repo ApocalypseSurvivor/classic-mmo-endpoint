@@ -11,31 +11,35 @@ import resolvers from "./resolvers.js";
 import openDb from "./db.js";
 import authenticateJWT from "./authenticateJWT.js"; // Import the JWT middleware
 
-const app = express();
-const httpServer = http.createServer(app);
-const db = await openDb();
+const startServer = async () => {
+  const app = express();
+  const httpServer = http.createServer(app);
+  const db = await openDb();
 
-// Set up Apollo Server
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-  plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
-});
-await server.start();
+  // Set up Apollo Server
+  const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+    plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
+  });
+  await server.start();
 
-// Apply middleware
-app.use(
-  cors(),
-  bodyParser.json(),
-  authenticateJWT,
-  expressMiddleware(server, {
-    context: async ({ req }) => {
-      const user = req.user || null; // Extract user from request if available
-      return { db, user };
-    },
-  })
-);
+  // Apply middleware
+  app.use(cors(), bodyParser.json(), authenticateJWT);
 
-// Start the server
-await new Promise((resolve) => httpServer.listen({ port: 4444 }, resolve));
-console.log(`🚀 Server ready at http://localhost:4444`);
+  app.use(
+    "/graphql",
+    expressMiddleware(server, {
+      context: async ({ req }) => {
+        const user = req.user || null; // Extract user from request if available
+        return { db, user };
+      },
+    })
+  );
+
+  // Start the server
+  await new Promise((resolve) => httpServer.listen({ port: 4444 }, resolve));
+  console.log(`🚀 Server ready at http://localhost:4444`);
+};
+
+startServer().catch((error) => console.error("Error starting server:", error));

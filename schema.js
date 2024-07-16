@@ -10,9 +10,15 @@ const typeDefs = `
     hash: String!
   }
 
+  type Character {
+    id: ID!
+    name: String!
+    model: String!
+  }
+
   type Query {
     hello: String
-    beans(token: String): String
+    characters: [Character]
   }
 
   type Mutation {

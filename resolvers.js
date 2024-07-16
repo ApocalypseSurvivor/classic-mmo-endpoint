@@ -1,3 +1,4 @@
+import { AuthenticationError, UserInputError } from "apollo-server-errors";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 const SECRET_KEY = "your_secret_key";
@@ -5,18 +6,23 @@ const SECRET_KEY = "your_secret_key";
 const resolvers = {
   Query: {
     hello: () => "Hello world!",
-    beans: async (_, { token }, { db, user }) => {
-      if (!token) {
-        console.log("beans saw no token");
-        return null;
+    characters: async (_, args, { db, user }) => {
+      if (!user) {
+        throw new AuthenticationError("UNAUTHENTICATED");
       }
 
-      console.log(JSON.stringify(user));
-      const data = await db.get("SELECT * FROM users WHERE id = ?", [user.id]);
+      try {
+        const characters = await db.all(
+          'SELECT character_id AS id, name, "fake" as model FROM characters WHERE user_id = ?',
+          [user.id]
+        );
 
-      console.log(JSON.stringify(data));
-      return JSON.stringify(data);
-    }, //  beans
+        return characters;
+      } catch (error) {
+        console.log("Error fetching characters: " + error.message);
+        return [];
+      }
+    },
   }, //  Query
 
   Mutation: {
@@ -52,20 +58,20 @@ const resolvers = {
       ]);
 
       if (!user) {
-        return { token: null };
+        throw new UserInputError("Invalid username or password");
       }
 
       const passwordIsValid = bcrypt.compareSync(password, user.password_hash);
 
       if (!passwordIsValid) {
-        return { token: null };
+        throw new UserInputError("Invalid username or password");
       }
 
       const token = jwt.sign({ id: user.user_id }, SECRET_KEY, {
         expiresIn: 86400,
-      }); // 24 hours
+      }); // 24 hours   //  expiresIn: 300,
 
-      return { token }; //  res.status(200).send({ auth: true, token });
+      return { token };
     }, //  signIn
   }, //  Mutation
 };
